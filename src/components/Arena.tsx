@@ -42,71 +42,63 @@ function mulberry32(a: number) {
 const rng = mulberry32(12345);
 
 const OBSTACLES = Array.from({ length: 150 }).map(() => {
-  const type = 'box';
-  const x = (rng() - 0.5) * 170; // Avoid edges
+  const type = rng() > 0.3 ? 'box' : 'cylinder';
+  const x = (rng() - 0.5) * 170;
   const z = (rng() - 0.5) * 170;
   
-  // Keep center somewhat clear
   if (Math.abs(x) < 20 && Math.abs(z) < 20) return null;
 
-  const height = rng() * 8 + 6;
-  const isHorizontal = rng() > 0.5;
-  const width = isHorizontal ? rng() * 25 + 10 : rng() * 3 + 1;
-  const depth = isHorizontal ? rng() * 3 + 1 : rng() * 25 + 10;
-  const rotation = 0; // Axis aligned for maze feel
-  const color = rng() > 0.5 ? "#00ffff" : "#ff00ff";
+  const height = rng() * 6 + 4;
+  const width = rng() * 4 + 2;
+  const depth = rng() * 4 + 2;
+  const color = ["#FFD700", "#FF69B4", "#87CEEB", "#FFA500", "#98FB98"][Math.floor(rng() * 5)];
 
-  return { type, position: [x, height / 2 - 0.5, z], size: [width, height, depth], rotation: [0, rotation, 0], color };
+  return { type, position: [x, height / 2, z], size: [width, height, depth], rotation: [0, rng() * Math.PI, 0], color };
 }).filter(Boolean);
 
 export function Arena() {
   const isMobile = useIsMobile();
   
   const obstacles = useMemo(() => {
-    const count = isMobile ? 60 : 150;
+    const count = isMobile ? 60 : 120;
     const rngLocal = mulberry32(12345);
     return Array.from({ length: count }).map(() => {
-      const type = 'box';
+      const type = rngLocal() > 0.3 ? 'box' : 'cylinder';
       const x = (rngLocal() - 0.5) * 170;
       const z = (rngLocal() - 0.5) * 170;
       
       if (Math.abs(x) < 20 && Math.abs(z) < 20) return null;
 
-      const height = rngLocal() * 8 + 6;
-      const isHorizontal = rngLocal() > 0.5;
-      const width = isHorizontal ? rngLocal() * 25 + 10 : rngLocal() * 3 + 1;
-      const depth = isHorizontal ? rngLocal() * 3 + 1 : rngLocal() * 25 + 10;
-      const color = rngLocal() > 0.5 ? "#00ffff" : "#ff00ff";
+      const height = rngLocal() * 6 + 4;
+      const width = rngLocal() * 4 + 2;
+      const depth = rngLocal() * 4 + 2;
+      const color = ["#FFD700", "#FF69B4", "#87CEEB", "#FFA500", "#98FB98"][Math.floor(rngLocal() * 5)];
 
-      return { type, position: [x, height / 2 - 0.5, z], size: [width, height, depth], rotation: [0, 0, 0], color };
+      return { type, position: [x, height / 2, z], size: [width, height, depth], rotation: [0, rngLocal() * Math.PI, 0], color };
     }).filter(Boolean);
   }, [isMobile]);
 
   return (
     <group>
       {/* Floor */}
-      <RigidBody type="fixed" name="floor" friction={0}>
-        <mesh receiveShadow={!isMobile} position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <RigidBody type="fixed" name="floor" friction={0.5}>
+        <mesh receiveShadow={!isMobile} position={[0, -0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[200, 200]} />
-          <meshStandardMaterial color="#050510" roughness={0.2} metalness={0.8} />
+          <meshStandardMaterial color="#567d46" roughness={0.8} />
         </mesh>
       </RigidBody>
-      <Grid position={[0, -0.49, 0]} args={[200, 200]} cellColor="#ff00ff" sectionColor="#00ffff" fadeDistance={100} cellThickness={0.5} sectionThickness={1.5} />
 
-      {/* Ceiling */}
+      {/* Ceiling (Clear sky look, but still a barrier) */}
       <RigidBody type="fixed" name="ceiling">
-        <mesh receiveShadow={!isMobile} position={[0, 20, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 40, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <planeGeometry args={[200, 200]} />
-          <meshStandardMaterial color="#000000" roughness={1} />
+          <meshBasicMaterial transparent opacity={0} />
         </mesh>
       </RigidBody>
 
       {/* Atmosphere */}
       {!isMobile && (
-        <>
-          <Stars radius={100} depth={50} count={5000} factor={4} saturation={1} fade speed={1} />
-          <AmbientParticles />
-        </>
+        <AmbientParticles />
       )}
 
       {/* Walls */}
@@ -133,16 +125,16 @@ export function Arena() {
               ) : (
                 <cylinderGeometry args={[obs.size[0]/2, obs.size[0]/2, obs.size[1], 16]} />
               )}
-              <meshStandardMaterial color="#1a1a2e" roughness={0.6} metalness={0.5} />
+              <meshStandardMaterial color={obs.color} roughness={0.4} metalness={0.1} />
               
-              {/* Neon accent on obstacles */}
-              <mesh position={[0, obs.size[1]/2 - 0.5, 0]}>
+              {/* Whimsical border */}
+              <mesh position={[0, obs.size[1]/2 + 0.01, 0]}>
                 {obs.type === 'box' ? (
-                  <boxGeometry args={[obs.size[0] + 0.1, 0.2, obs.size[2] + 0.1]} />
+                  <boxGeometry args={[obs.size[0] + 0.05, 0.1, obs.size[2] + 0.05]} />
                 ) : (
-                  <cylinderGeometry args={[obs.size[0]/2 + 0.1, obs.size[0]/2 + 0.1, 0.2, 16]} />
+                  <cylinderGeometry args={[obs.size[0]/2 + 0.05, obs.size[0]/2 + 0.05, 0.1, 16]} />
                 )}
-                <meshBasicMaterial color={obs.color} toneMapped={false} />
+                <meshStandardMaterial color="#ffffff" />
               </mesh>
             </mesh>
           </RigidBody>
@@ -157,18 +149,17 @@ function Wall({ name, position, rotation, isMobile }: { name: string, position: 
     <RigidBody type="fixed" name={name} position={position} rotation={rotation}>
       {/* Solid Wall */}
       <mesh>
-        <boxGeometry args={[200, 10, 1]} />
-        <meshStandardMaterial color="#0a0a1a" roughness={0.8} metalness={0.2} />
+        <boxGeometry args={[200, 15, 2]} />
+        <meshStandardMaterial color="#a4c3e1" roughness={0.6} metalness={0.1} />
       </mesh>
-      {/* Glowing Base Line */}
-      <mesh position={[0, -4.5, 0.51]}>
-        <planeGeometry args={[200, 1]} />
-        <meshBasicMaterial color="#ff00ff" toneMapped={false} />
+      {/* Decorative Trim */}
+      <mesh position={[0, 7, 1.1]}>
+        <boxGeometry args={[200, 1, 0.2]} />
+        <meshStandardMaterial color="#ffd700" />
       </mesh>
-      {/* Glowing Top Line */}
-      <mesh position={[0, 4.5, 0.51]}>
-        <planeGeometry args={[200, 1]} />
-        <meshBasicMaterial color="#00ffff" toneMapped={false} />
+      <mesh position={[0, -7, 1.1]}>
+        <boxGeometry args={[200, 1, 0.2]} />
+        <meshStandardMaterial color="#ffd700" />
       </mesh>
     </RigidBody>
   );
@@ -193,7 +184,7 @@ function AmbientParticles() {
 
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
-    uColor: { value: new THREE.Color('#ffffff') } // White color
+    uColor: { value: new THREE.Color('#ffd700') } // Golden magic sparkles
   }), []);
 
   useFrame((state) => {

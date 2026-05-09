@@ -11,6 +11,7 @@ import { Enemy } from './Enemy';
 import { OtherPlayer } from './OtherPlayer';
 import { Effects } from './Effects';
 import { useGameStore } from '../store';
+import { Sky } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useEffect } from 'react';
@@ -63,18 +64,22 @@ export function Game() {
       camera={{ fov: 75 }}
       dpr={isMobile ? [1, 1.5] : [1, 2]} // Lower DPR for mobile performance
     >
-      <color attach="background" args={['#050510']} />
-      <fogExp2 attach="fog" args={['#050510', isMobile ? 0.04 : 0.025]} />
+      <color attach="background" args={['#87ceeb']} />
+      <fogExp2 attach="fog" args={['#87ceeb', isMobile ? 0.02 : 0.015]} />
       
-      <ambientLight intensity={isMobile ? 0.8 : 0.5} />
-      <pointLight position={[0, 8, 0]} intensity={1.5} castShadow={!isMobile} distance={60} />
+      <Sky sunPosition={[100, 10, 100]} />
+      <ambientLight intensity={isMobile ? 1.5 : 1.2} />
+      <directionalLight 
+        position={[100, 100, 100]} 
+        intensity={2} 
+        castShadow={!isMobile} 
+        shadow-mapSize={[1024, 1024]}
+      />
       
       {!isMobile && (
         <>
-          <pointLight position={[25, 8, 25]} intensity={1.2} castShadow distance={60} />
-          <pointLight position={[-25, 8, -25]} intensity={1.2} castShadow distance={60} />
-          <pointLight position={[25, 8, -25]} intensity={1.2} castShadow distance={60} />
-          <pointLight position={[-25, 8, 25]} intensity={1.2} castShadow distance={60} />
+          <pointLight position={[50, 20, 50]} intensity={1} distance={100} />
+          <pointLight position={[-50, 20, -50]} intensity={1} distance={100} />
         </>
       )}
       
